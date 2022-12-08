@@ -22,8 +22,8 @@ let ysiz=${#grid[*]}
 # Answer 1. Count visible trees from each direction.
 
 
-typeset -a counted  # track if tree counted already
-let num=0
+typeset -a isCounted  # track if tree counted already.
+let num=0           # count of trees
 
 function countTree
 {
@@ -31,8 +31,8 @@ function countTree
     typeset check=${grid[y]:x:1}
     if (( check > treeSize )); then
         let treeSize=check
-        if (( !counted[y][x] )); then
-            counted[y][x]=1 # remember that it was already counted.
+        if (( !isCounted[y][x] )); then
+            isCounted[y][x]=1 # remember that it was already counted.
             let num++
         fi
     fi
@@ -77,30 +77,29 @@ echo "Answer 1 is $num trees visible."
 typeset maxScore=0
 for (( y=0; y<ysiz; y++ )); do
     for (( x=0; x<xsiz; x++ )); do
-        treeSize=${grid[y]:x:1}
-        # to north
-        nTrees=(0 0 0 0) # number of trees in each direction
-        for (( yy=y-1; yy>=0; --yy ));do
+        treeSize=${grid[y]:x:1}             # current tree size
+        nTrees=(0 0 0 0)                    # count of trees in each direction
+        for (( yy=y-1; yy>=0; --yy ));do    # to north
             typeset check=${grid[yy]:x:1}
             let nTrees[0]++
             ((check>=treeSize)) && break
         done
-        for (( yy=y+1; yy<ysiz; ++yy ));do
+        for (( yy=y+1; yy<ysiz; ++yy ));do  # to south
             typeset check=${grid[yy]:x:1}
             let nTrees[1]++
             ((check>=treeSize)) && break
         done
-        for (( xx=x-1; xx>=0; --xx ));do
+        for (( xx=x-1; xx>=0; --xx ));do    # to west
             typeset check=${grid[y]:xx:1}
             let nTrees[2]++
             ((check>=treeSize)) && break
         done
-        for (( xx=x+1; xx<xsiz; ++xx ));do
+        for (( xx=x+1; xx<xsiz; ++xx ));do  # to east
             typeset check=${grid[y]:xx:1}
             let nTrees[3]++
             ((check>=treeSize)) && break
         done
-        let score=nTrees[0]*nTrees[1]*nTrees[2]*nTrees[3]
+        let score=nTrees[0]*nTrees[1]*nTrees[2]*nTrees[3]  # score calculation
         if (( score > maxScore )); then
             let maxScore=score
             # echo "New max score: $score @ $x,$y (${nTrees[*]})"
@@ -108,4 +107,4 @@ for (( y=0; y<ysiz; y++ )); do
     done
 done
 
-echo "Answer 2 is $maxScore."
+echo "Answer 2 is $maxScore maximum tree score."
