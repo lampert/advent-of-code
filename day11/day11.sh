@@ -96,81 +96,90 @@ function parseMonkeys
 
 function runSimulation
 {
-    nameref m=$1
+    nameref monkeys=$1
     typeset numRounds=$2
     typeset worryDiv=$3
 
 if ((verbose)); then
     echo "-- simulation Monkey defintions"
-    for ((i=0; i<${#m[*]}; i++));do
+    for ((i=0; i<${#monkeys[*]}; i++));do
         print -n "$i "
-        typeset -p m[$i]
+        typeset -p monkeys[$i]
         echo
     done
     echo "-- end Monkey defintions"
 fi
 
-    for round in {1..20}; do
+    for round in {1..$numRounds}; do
 
-        for ((i=0; i<${#m[*]}; i++));do
+        for ((i=0; i<${#monkeys[*]}; i++));do
 
             # move items to temp variable
             unset items
-            typeset -m items=m[i].items
+            typeset -m items=monkeys[i].items
 
-            (( m[i].inspectionCount += ${#items[*]} ))   # count inspections per monkey
+            (( monkeys[i].inspectionCount += ${#items[*]} ))   # count inspections per monkey
 
             typeset -f new                     # new set to float because integers overflow
             for old in ${items[*]};do
-                (( ${m[i].operation} ))  # execute formula new=old*...
-                (( new/=3 ))                   # worry decay
-                if (( new%${m[i].testDivisibleBy}==0)); then
-                    (( throwTo=${m[i].ifTrueThrowTo} ))
+                (( ${monkeys[i].operation} ))  # execute formula new=old*...
+                (( new/=$worryDiv ))                   # worry decay
+                if (( new%${monkeys[i].testDivisibleBy}==0)); then
+                    (( throwTo=${monkeys[i].ifTrueThrowTo} ))
                 else
-                    (( throwTo=${m[i].ifFalseThrowTo} ))
+                    (( throwTo=${monkeys[i].ifFalseThrowTo} ))
                 fi
-                m[$throwTo].items+=($new)  # move item to monkey list
+                monkeys[$throwTo].items+=($new)  # move item to monkey list
             done
 
         done
         if ((verbose)); then
             echo "----after round $round"
-            for ((i=0; i<${#m[*]}; i++));do
-                echo "   monkey $i items ${m[i].items[*]}"
+            for ((i=0; i<${#monkeys[*]}; i++));do
+                echo "   monkey $i items ${monkeys[i].items[*]}"
+            done
+            echo "    ---counts"
+            for ((i=0; i<${#monkeys[*]}; i++));do
+                echo "       monkey $i counts ${monkeys[i].inspectionCount}"
             done
         fi
     done
 
-    if ((verbose));then
-        echo "--- counts after all rounds"
-        for ((i=0; i<${#m[*]}; i++));do
-            echo "   monkey $i counts ${m[i].inspectionCount}"
-        done
-    fi
+}
+
+function calculateMonkeyBusiness
+{
+    nameref monkeys=$1
+    nameref output=$2
+    # index the counts
+    typeset -A indexCounts
+    for ((i=0; i<${#monkeys[*]}; i++));do
+        (( c=${monkeys[i].inspectionCount} ))
+        key=${ printf "count=%010d,monkey=%03d" $c $i;}
+        indexCounts[$key]=$c
+    done
+    sortedByIndex=(${!indexCounts[*]})    # export sorted keys to new array
+    (( output=${indexCounts[$sortedByIndex[-1]]}*${indexCounts[$sortedByIndex[-2]]} ))  # multiply highest 2
 }
 
 
 typeset -a initialState
 parseMonkeys initialState
-
+answer1=0
+eval typeset -a run1=$(printf %B initialState)   # copy initial state
+answer2=0
+eval typeset -a run2=$(printf %B initialState)   # copy initial state
 
 
 # Answer 1.  find 2 highest counts and multiply.
 
+runSimulation run1 20 3                          # numRounds 20, worry divider 3
+calculateMonkeyBusiness run1 answer1
+echo "Answer 1 is $answer1."
 
 
-eval typeset -a run1=$(printf %B initialState)
-runSimulation run1 20 3  # numRounds 20, worry divider 3
+# Answer 2. change parameters
 
-# index counts
-typeset -A indexCounts
-for ((i=0; i<${#run1[*]}; i++));do
-    (( c=${run1[i].inspectionCount} ))
-    key=${ printf "count=%010d,monkey=%03d" $c $i;}
-    indexCounts[$key]=$c
-done
-sortedByIndex=(${!indexCounts[*]})    # export sorted keys to new array
-(( mult=${indexCounts[$sortedByIndex[-1]]}*${indexCounts[$sortedByIndex[-2]]} ))  # multiply highest 2
-
-echo "Answer 1 is $mult."
-
+runSimulation run2 10000 1                       # numRounds, worry divider
+calculateMonkeyBusiness run1 answer1
+echo "Answer 2 is $answer2."
