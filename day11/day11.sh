@@ -100,15 +100,17 @@ function runSimulation
     typeset numRounds=$2
     typeset worryDiv=$3
 
-if ((verbose)); then
-    echo "-- simulation Monkey defintions"
+    typeset monkeyMod=1  # need to limit values and preserve divisibility test
     for ((i=0; i<${#monkeys[*]}; i++));do
-        print -n "$i "
-        typeset -p monkeys[$i]
-        echo
+        (( monkeyMod *= monkeys[$i].testDivisibleBy ))
+        if (( verbose )); then
+            (( i==0 )) && echo "-- simulation Monkey defintions"
+            print -n "$i "
+            typeset -p monkeys[$i]
+            echo
+            (( i==${#monkeys[*]}-1 )) && echo "-- end Monkey defintions"
+        fi
     done
-    echo "-- end Monkey defintions"
-fi
 
     for round in {1..$numRounds}; do
 
@@ -120,10 +122,11 @@ fi
 
             (( monkeys[i].inspectionCount += ${#items[*]} ))   # count inspections per monkey
 
-            typeset -f new                     # new set to float because integers overflow
+            typeset -f new                             # new set to float because integers overflow
             for old in ${items[*]};do
-                (( ${monkeys[i].operation} ))  # execute formula new=old*...
+                (( ${monkeys[i].operation} ))          # execute formula new=old*...
                 (( new/=$worryDiv ))                   # worry decay
+                (( new%=$monkeyMod ))                  # lower number to manageable range while preserving divisibility check
                 if (( new%${monkeys[i].testDivisibleBy}==0)); then
                     (( throwTo=${monkeys[i].ifTrueThrowTo} ))
                 else
@@ -181,5 +184,5 @@ echo "Answer 1 is $answer1."
 # Answer 2. change parameters
 
 runSimulation run2 10000 1                       # numRounds, worry divider
-calculateMonkeyBusiness run1 answer1
+calculateMonkeyBusiness run2 answer2
 echo "Answer 2 is $answer2."
