@@ -178,6 +178,7 @@ typeset i j rc
 
 echo "answer 2 sorting..."
 
+# slow "dumb" sort...
 for (( i=0; i<nlines; ++i )); do
     (( i%10==0 )) && echo " sorting $i of $nlines"
     for (( j=0; j<nlines; ++j )); do
