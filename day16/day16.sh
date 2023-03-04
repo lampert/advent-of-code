@@ -40,36 +40,41 @@ function tryPaths
         echo "Iterations $globalIterations persec $((int(globalIterations/(SECONDS-globalStart))))"
     fi
 
-    # calculate score for turning on this valve.
-    typeset myScore=$((map.caves[$cave].rate * timeLeft))
+    nameref caveP=map.caves[$cave]              # pointer to current cave info.
+
+    typeset myScore=$((caveP.rate * timeLeft))  # calculate score for turning on this valve.
 
     # mark as used (rate=0), but remember so I can restore on return.
-    typeset oldRate=$((map.caves[$cave].rate))
-    map.caves[$cave].rate=0
+    if ((caveP.rate>0)); then
+        unset map.valves[$cave]                 # remove from valve list
+    fi
 
     # look for valves with rate>0 and try them.
-    typeset maxScore=0
-    typeset c
-    for c in ${map.valves[*]};do
-        (( map.caves[$c].rate==0 )) && continue       # skip no valve
-        typeset -i dist=${map.caves[$cave].dists[$c]}
+    typeset c maxScore=0
+    for c in ${!map.valves[*]};do
+        (( map.caves[$c].rate==0 )) && continue # skip no valve
+        typeset -i dist=${caveP.dists[$c]}
         (( dist+1 > timeLeft )) && continue     # skip if out of time
         tryPaths map $c $((timeLeft-dist-1))    # get the score for this path
         (( maxScore=fmax($?,maxScore) ))        # $? has returned score. track maximum
     done
-    (( map.caves[$cave].rate=oldRate ))         # restore rate score before returning.
+
+    # restore to valve list
+    if ((caveP.rate>0));then
+        map.valves[$cave]=1                     # add back to valve list
+    fi
     return $((myScore + maxScore))              # return my score
 }
 
 # Read in map of tunnels & rates
 # "Valve DD has flow rate=20; tunnels lead to valves CC, AA, EE"
 
-typeset -C map=(typeset -A caves; typeset -a valves)
+typeset -C map=(typeset -A caves; typeset -A valves)
 while read cv v ch cf r ct cl ct ct2 ts;do
     typeset r=${r#rate=} r=${r%\;}     # extract rate, remove rate= and ;
     typeset t=( $ts ) t=${t[*]%,}      # make array, clean up ,'s
     map.caves[$v]=(rate=$r; typeset -A dists; tunnels=$t )
-    (( r>0 )) && map.valves[${#map.valves[*]}]=$v   # cache list of valves
+    (( r>0 )) && map.valves[$v]=1      # cache list of valves
 done < $INPUT
 
 # Calculate all distances for all caves
@@ -80,8 +85,6 @@ for c in ${!map.caves[*]};do
     echo "Cave $c:"
     typeset -p map.caves[$c].dists
 done
-
-typeset -p map.valves
 
 echo "Trying paths..."
 
