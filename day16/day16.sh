@@ -21,7 +21,7 @@ function shortestDistances
         dists[$cave]=$currentDistance
         # now calculate all tunnels from here
         typeset newCave
-        for newCave in ${map[$cave].tunnels[*]}; do
+        for newCave in ${map.caves[$cave].tunnels[*]}; do
             shortestDistances map dists $newCave $((currentDistance+1))
         done
     fi
@@ -37,48 +37,51 @@ function tryPaths
     typeset timeLeft=$3
 
     if (( (++globalIterations % 10000) == 0));then
-        echo "Iterations $globalIterations seconds $((SECONDS-globalStart))"
+        echo "Iterations $globalIterations persec $((int(globalIterations/(SECONDS-globalStart))))"
     fi
 
     # calculate score for turning on this valve.
-    typeset myScore=$((map[$cave].rate * timeLeft))
+    typeset myScore=$((map.caves[$cave].rate * timeLeft))
 
     # mark as used (rate=0), but remember so I can restore on return.
-    typeset oldRate=$((map[$cave].rate))
-    map[$cave].rate=0
+    typeset oldRate=$((map.caves[$cave].rate))
+    map.caves[$cave].rate=0
 
     # look for valves with rate>0 and try them.
     typeset maxScore=0
     typeset c
-    for c in ${!map[*]};do
-        (( map[$c].rate==0 )) && continue       # skip no valve
-        typeset -i dist=${map[$cave].dists[$c]}
+    for c in ${map.valves[*]};do
+        (( map.caves[$c].rate==0 )) && continue       # skip no valve
+        typeset -i dist=${map.caves[$cave].dists[$c]}
         (( dist+1 > timeLeft )) && continue     # skip if out of time
         tryPaths map $c $((timeLeft-dist-1))    # get the score for this path
         (( maxScore=fmax($?,maxScore) ))        # $? has returned score. track maximum
     done
-    (( map[$cave].rate=oldRate ))               # restore rate score before returning.
+    (( map.caves[$cave].rate=oldRate ))         # restore rate score before returning.
     return $((myScore + maxScore))              # return my score
 }
 
 # Read in map of tunnels & rates
 # "Valve DD has flow rate=20; tunnels lead to valves CC, AA, EE"
 
-typeset -A map
+typeset -C map=(typeset -A caves; typeset -a valves)
 while read cv v ch cf r ct cl ct ct2 ts;do
     typeset r=${r#rate=} r=${r%\;}     # extract rate, remove rate= and ;
     typeset t=( $ts ) t=${t[*]%,}      # make array, clean up ,'s
-    map[$v]=(rate=$r; typeset -A dists; tunnels=$t )
+    map.caves[$v]=(rate=$r; typeset -A dists; tunnels=$t )
+    (( r>0 )) && map.valves[${#map.valves[*]}]=$v   # cache list of valves
 done < $INPUT
 
 # Calculate all distances for all caves
 
 typeset c
-for c in ${!map[*]};do
-    shortestDistances map map[$c].dists $c 0
+for c in ${!map.caves[*]};do
+    shortestDistances map map.caves[$c].dists $c 0
     echo "Cave $c:"
-    typeset -p map[$c].dists
+    typeset -p map.caves[$c].dists
 done
+
+typeset -p map.valves
 
 echo "Trying paths..."
 
