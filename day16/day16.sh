@@ -3,8 +3,8 @@
 
 set -u -f # no undeclared vars, no file name expansion
 
-INPUT=control.txt   # test data
-#INPUT=input.txt    # problem data
+#INPUT=control.txt   # test data
+INPUT=input.txt    # problem data
 
 function shortestDistances
 {
@@ -13,11 +13,6 @@ function shortestDistances
     nameref dists=$2
     typeset cave=$3
     typeset currentDistance=$4
-
-    if (( currentDistance==0 )); then
-        #initialize
-        typeset -A dists=( )
-    fi
 
     typeset oldDist
     oldDist=${dists[$cave]:-inf}    # if unset, then set to infinity
@@ -73,7 +68,7 @@ typeset -A map
 while read cv v ch cf r ct cl ct ct2 ts;do
     typeset r=${r#rate=} r=${r%\;}     # extract rate, remove rate= and ;
     typeset t=( $ts ) t=${t[*]%,}      # make array, clean up ,'s
-    map[$v]=(valve=$v rate=$r dists=( ) tunnels=$t )
+    map[$v]=(rate=$r; typeset -A dists; tunnels=$t )
 done < $INPUT
 
 # Calculate all distances for all caves
