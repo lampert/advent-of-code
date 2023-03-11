@@ -22,17 +22,18 @@ function shortestDistances
 
 function calculateScores
 {
+    # calculate score to all caves and store maximum for each combination of open valves
     nameref map=$1
     typeset cave=$2 timeLeft=$3 score=${4:-0} openValves=${5:-0}
     ((map.scores[$openValves]=fmax(${map.scores[$openValves]:-0},score))) # max score for this set of open valves
     typeset c
     for c in ${!map.valveBit[*]};do                 # calculate from all tunnels
-        typeset bit=${map.valveBit[$c]}
+        typeset bit=${map.valveBit[$c]}             # each valve assigned its own bit
         (( openValves & bit )) && continue          # skip already open valves
         typeset distance=${map.dists[$cave][$c]}
         typeset newTimeLeft=$((timeLeft-distance-1))
         ((newTimeLeft<=0)) && continue              # can't reach in time
-        calculateScores map $c $newTimeLeft $((score+(map.rate[$c]*newTimeLeft))) $((openValves|bit)) 
+        calculateScores map $c $newTimeLeft $((score+(map.rate[$c]*newTimeLeft))) $((openValves|bit))
     done
 }
 
