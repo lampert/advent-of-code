@@ -53,3 +53,71 @@ for ((y=1; y<ysize; y++));do
    done
 done
 echo "Answer 1: $tot"
+
+
+
+
+# scan for '*', find 2 adjacent numbers
+
+# turn grid in to arrays
+for ((y=0;y<ysize;y++));do
+    g[y]=( ${grid[y]//?/\0 } )
+done
+
+function collectNum
+{
+    # search for number @ x,y.  returns in out if found
+    nameref grid=$1
+    typeset x=$2 y=$3
+    nameref out=$4
+    if [[ ${grid[y][x]} != [0-9] ]]; then
+        out=""
+        return #not a num
+    fi
+    
+    # find beginning of number
+    while [[ ${grid[y][x-1]} == [0-9] ]]; do
+        ((--x))
+    done
+    #echo "beginning of number = $x,$y: ${grid[y][x]}"
+
+    # collect number
+    out=""
+    while [[ ${grid[y][x]} == [0-9] ]]; do
+        out="$out${grid[y][x]}"
+        #echo " collect number = $x,$y: ${grid[y][x]} -> $out"
+        grid[y][x]='x'
+        ((++x))
+    done
+}
+
+
+((tot=0))
+for ((y=1; y<ysize; y++));do
+    for ((x=1; x<xsize; x++));do
+        [[ ${g[y][x]} != '*' ]] && continue  # find symbol
+
+        #echo "found a * at $x,$y"
+
+        typeset -a nums=( )
+
+        # collect surrounding numbers
+        for ((yy=-1; yy<=1; yy++));do
+            for ((xx=-1; xx<=1; xx++)); do
+                out=""
+                collectNum g $((x+xx)) $((y+yy)) out
+                if [[ -n $out ]]; then
+                    nums[${#nums[*]}]=$out  # collect adjacent number
+                fi
+            done
+        done
+
+        if ((${#nums[*]} == 2));then
+            # only if there are 2, then they count
+            (( tot+=(${nums[0]} * ${nums[1]}) ))
+        fi
+
+   done
+done
+echo "Answer 2: $tot"
+
