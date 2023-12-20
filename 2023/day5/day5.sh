@@ -89,32 +89,30 @@ function addtx
 for ((i=0; i<${#seeds[*]}; i+=2));do
 
     # Start with seed range from seed list above.
-    typeset -a ss=( (s=$((seeds[i]));e=$((seeds[i]+seeds[i+1]-1))) )
+    typeset -a ss=( (s=$((seeds[i]));e=$((seeds[i]+seeds[i+1]-1))) )   # ss.s is start, ss.e is end of range
 
     # process each transform for this seed.
     for tpos in ${transformPositions[*]};do
-        exec 9<$INPUT
         typeset -a newss=()            # collect transformed seed ranges (may be multiple)
-
         nchanges=-1                    # set up conditions to hit reset case
-        9<#((EOF))                     # position at eof so it reads empty - it'll get reset right away
+        exec 9<$INPUT                  # open input file.
+        9<#((EOF))                     # position at eof so it reads empty - it'll get empty read and hit my reset case
         while true;do
-            read -u9 td ts tsrng       # next transform criteria
+            read -u9 td ts tsrng       # next transform criteria: destination, source, range
             if [[ -z $td ]];then
                 # at end of transform criteria.  but I might need to reset back, if there were changes.
                 (( nchanges==0 )) && break # no more work for this transform.
 
                 # since there were changes, we should reset file position to top of transform criteria and run again.
                 nchanges=0
-                exec 9<$INPUT
-                9<#((tpos))
+                exec 9<$INPUT   # I need to re-open the file or else I get unexpected results from read. I *think* it needs to clear read buffer.
+                9<#((tpos))     # position file pointer at $tpos
                 continue
             fi
-            te=$((ts+tsrng-1))  # end of source range
+            te=$((ts+tsrng-1))  # end of transform range.  (start is $ts)
             trx=$((td-ts))      # transform to apply if in range.
 
-            # first pass, split up all ranges so they are either in or out of a range.
-
+            # split up all ranges so they are either in or out of a range.
             for j in ${!ss[*]};do  # for each seed range.
                 if (( ss[j].e<ts || ss[j].s>te )); then
                     # outside of range, no transform yet
@@ -164,7 +162,7 @@ for ((i=0; i<${#seeds[*]}; i+=2));do
             done #for all seed ranges
         done #while current transform
 
-        # if a range was not in transform criteria, it goes untransformed.
+        # if a seed was not in transform criteria, it progresses unmodified
         for j in ${!ss[*]};do
             addtx newss 0 $((ss[j].s)) $((ss[j].e))
         done
