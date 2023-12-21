@@ -48,7 +48,6 @@ function calcHandType
 }
 
 # this converts a card in to a sortable key, with A first, 1 last.
-typeset -A cardSortTbl=([A]=a [K]=b [Q]=c [J]=d [T]=e [9]=f [8]=g [7]=h [6]=i [5]=j [4]=k [3]=l [2]=m [1]=n)
 typeset -A cardSortTbl=([A]=n [K]=m [Q]=l [J]=k [T]=j [9]=i [8]=h [7]=g [6]=f [5]=e [4]=d [3]=c [2]=b [1]=a)
 
 function makeSortKey
