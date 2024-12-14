@@ -11,23 +11,17 @@ import (
 
 // read each line from a file, parse in to slice of ints, then callback to process
 func foreachline[A any](callbackarg A, callback func(A, []int) bool) bool {
-
 	// Line scanner...
 	lscan := bufio.NewScanner(os.Stdin)
 	for n := 0; lscan.Scan(); n++ {
-		w := make([]int, 0, 100)
+		numarr := make([]int, 0, 100)
 		line := lscan.Text()
-
-		// Word scanner, collect all ints
-		wscan := bufio.NewScanner(strings.NewReader(line))
-		wscan.Split(bufio.ScanWords)
-		for wscan.Scan() {
-			val, _ := strconv.Atoi(wscan.Text())
-			w = append(w, val)
-		}
-
+        for _,numstr := range strings.Fields(line) {
+			num, _:=strconv.Atoi(numstr)
+			numarr = append(numarr, num)
+        }
 		// process line
-		if !callback(callbackarg, w) {
+		if !callback(callbackarg, numarr) {
 			return false
 		}
 	}
@@ -39,10 +33,10 @@ func foreachline[A any](callbackarg A, callback func(A, []int) bool) bool {
 }
 
 func abs(value int) int {
-	if value < 0 {
-		return -value
-	}
-	return value
+    if value < 0 {
+        return -value
+    }
+    return value
 }
 
 func checkSafe(nums []int) bool {
