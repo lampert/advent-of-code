@@ -34,16 +34,36 @@ func main() {
 		puz = append(puz, []rune(lscan.Text()))
 	}
 
+    // PART I
 	n := 0
     // walk each coordinate
 	for y := 0; y < len(puz); y++ {
 		for x := 0; x < len(puz[y]); x++ {
-
             // search each direction
             for _,dir:=range [][]int { {-1,-1},{0,-1},{1,-1}, {-1,0},{1,0}, {-1,1},{0,1},{1,1} } {
                 n+=findit(x, y, dir[0], dir[1], "XMAS")
             }
 		}
 	}
-	fmt.Println("answer ", n)
+	fmt.Println("part 1 answer ", n)
+
+    // PART II
+	n = 0
+    // walk each coordinate
+	for y := 0; y < len(puz); y++ {
+		for x := 0; x < len(puz[y]); x++ {
+
+            // need 2 diagonals to make an X
+            need2:=0
+            for _,dir:=range [][]int {{-1,-1},{-1,1}, {1,-1},{1,1}} {
+                // from center, start at each diagonal and search opposite direction
+                need2+=findit(x+dir[0], y+dir[1], -dir[0], -dir[1], "MAS")
+            }
+            if (need2==2) { // found 2 diagonals
+                n++
+            }
+		}
+	}
+	fmt.Println("part 2 answer ", n)
+
 }
