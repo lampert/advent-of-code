@@ -45,17 +45,16 @@ func main() {
     }
     fmt.Println("pages",pages)
 
-    // process each page
+    // process each page for PART 1
     score:=0
     for _,p:=range pages {
-
         // check rules
         good:=true
         for _,r:=range rules {
             i1:=slices.Index(p, r[0])
             i2:=slices.Index(p, r[1])
             if i1!=-1 && i2!=-1 && i1>i2 { // no good
-                fmt.Println(p," rule ",r)
+                //fmt.Println(p," rule ",r)
                 good=false
                 break
             }
@@ -65,6 +64,29 @@ func main() {
             score+=middle
         }
     }
+    fmt.Println("answer part 1",score)
 
-    fmt.Println("answer ",score)
+    // process each page for PART 2
+    score=0
+    for _,p:=range pages {
+        // check rules
+        good:=true
+        for i:=0; i<len(rules); i++ {
+			r:=rules[i]
+            i1:=slices.Index(p, r[0])
+            i2:=slices.Index(p, r[1])
+            if i1!=-1 && i2!=-1 && i1>i2 { // no good
+                good=false
+				// swap elements and rerun rules
+				p[i1],p[i2]=p[i2],p[i1]
+				i=-1 // reset rules index
+            }
+        }
+        if !good { // only count adjusted ones
+            middle:=p[(len(p)-1)/2]
+            score+=middle
+        }
+    }
+    fmt.Println("answer part 2",score)
+
 }
