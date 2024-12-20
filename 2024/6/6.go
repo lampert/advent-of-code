@@ -16,54 +16,35 @@ var startx,starty int // starting location in puz
 var dir=[4][2]int{ {0,-1}, {1,0}, {0,1}, {-1,0} }  // direction table: dx,dy  N,E,S,W
 
 func walk(count *int, x,y,d int) int {
-// walk in direction 'd' counting empty spots and turning or stopping
 
+	// walk in direction 'd' counting empty spots and turning or stopping
 	if x<0 || y<0 || x>=len(puz[0]) || y>=len(puz) {
-		//fmt.Println(x,y,"off the board")
 		return -1     //off the board
 	}
-	if visited[vis_t{x,y,d}] {
-		return -3     //looped! already visited
-	}
-	visited[vis_t{x,y,d}]=true
 	if puz[y][x] == '#' || puz[y][x]=='O' {
-		//fmt.Println(x,y,"blocked ",string(puz[y][x]))
 		return -2     //blocked
 	}
-	if puz[y][x]=='.' {
-		//fmt.Println(x,y,"count ",string(puz[y][x]))
-		*count++      //count this one
-		puz[y][x]='X' //mark as been here
+	if puz[y][x]=='.' && !visited[vis_t{x,y,-1}] {
+		*count++                      //count this one
+		visited[vis_t{x,y,-1}]=true   //mark as counted, with d==-1
 	}
 
 	for {
 		// walk in direction and check
+		if visited[vis_t{x,y,d}] {
+			return -3              //looped! already visited and went this direction
+		}
+		visited[vis_t{x,y,d}]=true // mark this coord and direction
 		rc:=walk(count,x+dir[d][0],y+dir[d][1],d)
 		switch rc {
-		case -3:  //loop, get out
+		case -3:  //loop detected, return
 			return -3
-		case -2:  //blocked, so turn
+		case -2:  //blocked, so turn directions
 			d=(d+1)%4
-			//fmt.Println(x,y,"turn right to ",d)
-			if puz[y][x]=='^' && d==0 { // at start position pointing north - loop
-				fmt.Println(x,y,"loop from turn")
-				return -3
-			}
 		case -1:  //off the edge
 			return -1
 		}
 	}
-}
-
-func copypuz(orig [][]rune) [][]rune {
-//  make deep copy of puzzle
-	cpy:=make([][]rune,0,len(orig))
-	for _,row:=range orig {
-		cpyr:=make([]rune,len(row))
-		copy(cpyr,row)
-		cpy=append(cpy,cpyr)
-	}
-	return cpy
 }
 
 func main() {
@@ -78,32 +59,30 @@ func main() {
 		}
 		puz = append(puz, l)
 	}
-	savepuz:=copypuz(puz) // save copy of original puzzle
 	fmt.Println("start ",startx,starty)
 	puz[starty][startx]='.' // initialize first step to empty
 
 	// PART I
-//
+
 	var cnt int
-//	walk(&cnt, startx,starty,0)
-//	fmt.Println("part 1 answer ",cnt)
+	visited=make(map[vis_t]bool)
+	walk(&cnt, startx,starty,0)
+	fmt.Println("part 1 answer ",cnt)
 
 	// PART II
 
 	countLoops:=0
 	for bly:=range len(puz) {
 		for blx:=range len(puz[0]) {
-			puz=copypuz(savepuz)
 			visited=make(map[vis_t]bool)
 			if puz[bly][blx] == '.' {
 				puz[bly][blx]='O'
 				cnt=0
 				rc:=walk(&cnt,startx,starty,0)
-				if rc==-3 {
-					// -3 indicates loop
-					fmt.Println(blx,bly,"found a looper")
+				if rc==-3 {       // -3 indicates loop
 					countLoops++
 				}
+				puz[bly][blx]='.' // restore puzzle
 			}
 		}
 	}
